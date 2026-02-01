@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repo sanity
+        run: |
+          set -euo pipefail
+          echo "swarmkit CI: sanity"
+          git status --porcelain
