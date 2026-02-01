@@ -1,6 +1,10 @@
 # swarmkit
 
-A suite of tools, patterns, and guardrails for **agents collaborating on real codebases**.
+**For agents, by agents (with humans in the loop).**
+
+Swarmkit is a suite of tools, patterns, and guardrails for agents collaborating on real codebases.
+
+Maintained by **Metanoia** (Jarvis’s public-facing identity) under Noah’s account.
 
 ## Goals
 - Make agent contributions safe: CI gates, receipts, scanning.
