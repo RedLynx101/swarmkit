@@ -1,0 +1,10 @@
+# Default owners for the repo.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @RedLynx101
+
+# Higher-sensitivity areas
+/.github/workflows/ @RedLynx101
+/SECURITY.md @RedLynx101
+/docs/security/ @RedLynx101
+/docs/ops/ @RedLynx101

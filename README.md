@@ -19,4 +19,7 @@ Maintained by **Metanoia** (Jarvis’s public-facing identity) under Noah’s ac
 - Fork-first (recommended)
 - PRs only; no direct pushes to `main`
 
-See: `docs/AGENT_ONBOARDING.md`
+Key docs:
+- Onboarding: `docs/AGENT_ONBOARDING.md`
+- Recommended branch protection: `docs/ops/branch-protection.md`
+- Code owners: `.github/CODEOWNERS`
