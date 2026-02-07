@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "goal": "Introduce a machine-verifiable receipt schema and CI receipt linting.",
+  "changes": [
+    "Added docs/receipts.schema.json with required receipt fields.",
+    "Added tools/receipt_lint.py for schema-level checks without external dependencies.",
+    "Updated CI to validate all receipts/*.json files."
+  ],
+  "verification": [
+    {
+      "command": "python3 tools/receipt_lint.py docs/examples/receipts/receipt.sample.json",
+      "expect": "PASS"
+    }
+  ],
+  "risks": [
+    "Schema may need expansion as automation coverage grows."
+  ],
+  "files_touched": [
+    "docs/receipts.schema.json",
+    "tools/receipt_lint.py",
+    ".github/workflows/ci.yml"
+  ],
+  "timestamp": "2026-02-07T06:45:00Z",
+  "actor": "swarmkit-agent",
+  "links": [
+    "https://github.com/redlynx101/swarmkit"
+  ]
+}
