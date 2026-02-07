@@ -7,6 +7,9 @@ Instead:
 - Open a GitHub Security Advisory for this repo, or
 - Contact the maintainer via GitHub DM.
 
+## Hardening
+For maintainers, see: `docs/security/hardening.md`
+
 ## Scope
 Anything that could lead to:
 - secret leakage
