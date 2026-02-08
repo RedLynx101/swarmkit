@@ -9,3 +9,4 @@
 - PRs only.
 - CI required.
 - At least 1 review.
+- Risk scan findings (`tools/risk_scan.py`) must be reviewed before merge if CI flags high-risk changes.
