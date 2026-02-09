@@ -26,3 +26,8 @@ jobs:
             exit 0
           fi
           python3 tools/receipt_lint.py "${files[@]}"
+
+      - name: Tooling unit tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools -p 'test_*.py'
