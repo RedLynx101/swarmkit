@@ -1,9 +1,14 @@
 import unittest
 
-from tools.task_broker import parse_issue_json, render_markdown
+from tools.task_broker import parse_issue_json, parse_issue_url, render_markdown
 
 
 class TaskBrokerTests(unittest.TestCase):
+    def test_parse_issue_url(self):
+        repo, issue_number = parse_issue_url("https://github.com/RedLynx101/swarmkit/issues/8")
+        self.assertEqual(repo, "RedLynx101/swarmkit")
+        self.assertEqual(issue_number, 8)
+
     def test_parse_issue_json_accepts_label_dicts(self):
         issue = parse_issue_json(
             {

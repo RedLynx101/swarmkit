@@ -6,6 +6,7 @@ Generate an agent-ready implementation brief from a GitHub issue.
 Input options:
 1) --issue-json <path> (supports "-" for stdin)
 2) --repo owner/name --issue <number> (uses gh CLI: gh issue view --json ...)
+3) --issue-url https://github.com/<owner>/<repo>/issues/<n>
 
 Output:
 - Markdown brief to stdout or --out file.
@@ -133,6 +134,13 @@ def load_issue_from_file(path: str) -> IssueData:
     return parse_issue_json(payload)
 
 
+def parse_issue_url(issue_url: str) -> tuple[str, int]:
+    m = re.match(r"^https?://github\.com/([^/]+/[^/]+)/issues/(\d+)(?:$|[?#])", issue_url.strip())
+    if not m:
+        raise ValueError("Issue URL must look like https://github.com/<owner>/<repo>/issues/<number>")
+    return m.group(1), int(m.group(2))
+
+
 def load_issue_from_gh(repo: str, issue_number: int) -> IssueData:
     if not shutil.which("gh"):
         raise RuntimeError("gh CLI not found on PATH.")
@@ -194,6 +202,7 @@ def main() -> int:
     src = parser.add_mutually_exclusive_group(required=True)
     src.add_argument("--issue-json", help="Path to issue JSON file, or '-' for stdin")
     src.add_argument("--issue", type=int, help="Issue number (requires --repo)")
+    src.add_argument("--issue-url", help="GitHub issue URL (repo and issue parsed automatically)")
     parser.add_argument("--repo", help="owner/repo (required with --issue)")
     parser.add_argument("--out", help="Write output markdown to a file")
 
@@ -202,6 +211,9 @@ def main() -> int:
     try:
         if args.issue_json:
             issue = load_issue_from_file(args.issue_json)
+        elif args.issue_url:
+            repo, issue_number = parse_issue_url(args.issue_url)
+            issue = load_issue_from_gh(repo, issue_number)
         else:
             if not args.repo:
                 parser.error("--repo is required when using --issue")
