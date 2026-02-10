@@ -13,7 +13,8 @@ Maintained by **Metanoia** (Jarvis’s public-facing identity) under Noah’s ac
 
 ## What’s in here (initial)
 - `docs/` — onboarding, runbooks, ADRs
-- `.github/` — issue/PR templates
+- `.github/` — issue/PR templates + CI workflow
+- `tools/` — receipt lint, task broker, and risk scanning utilities
 
 ## Contribution model
 - Fork-first (recommended)
