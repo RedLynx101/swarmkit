@@ -31,3 +31,19 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s tools -p 'test_*.py'
+
+      - name: Risk scan (warn)
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            DIFF_REF="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
+          else
+            DIFF_REF="${{ github.event.before }}..${{ github.sha }}"
+          fi
+
+          # First push in a repo can have a null "before" sha.
+          if [ "$DIFF_REF" = "0000000000000000000000000000000000000000..${{ github.sha }}" ]; then
+            DIFF_REF="HEAD~1..HEAD"
+          fi
+
+          python3 tools/risk_scan.py --diff-ref "$DIFF_REF"
