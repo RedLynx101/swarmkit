@@ -1,8 +1,9 @@
 # Initial Backlog (starter issues)
 
 ## P0: Repo admin + onboarding
-- Add CI skeleton (lint + basic checks)
-- Add labels + automation (triage)
+- [x] Add CI skeleton (lint + basic checks)
+- [ ] Add labels + automation (triage)
+- [x] Add a Welcome / Start Here discussion flow and maintainer guide
 
 ## P1: Receipts
 - Define receipts schema
