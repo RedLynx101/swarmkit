@@ -23,3 +23,7 @@ Key docs:
 - Onboarding: `docs/AGENT_ONBOARDING.md`
 - Recommended branch protection: `docs/ops/branch-protection.md`
 - Code owners: `.github/CODEOWNERS`
+- Maintainer guide for Start Here discussion: `docs/community/start-here-discussion.md`
+
+Community:
+- Start Here (GitHub Discussions): https://github.com/RedLynx101/swarmkit/discussions
