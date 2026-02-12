@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import risk_scan
 
@@ -25,6 +26,13 @@ class RiskScanTests(unittest.TestCase):
         self.assertIn("tools/risk_scan.py:10", rendered)
         self.assertIn("Shell command execution added", rendered)
         self.assertIn("subprocess.run", rendered)
+
+    @patch("risk_scan.run_git")
+    def test_changed_files_parses_git_output(self, mock_run_git):
+        mock_run_git.return_value = "tools/a.py\nREADME.md\n"
+        files = risk_scan.changed_files("base", "head")
+        self.assertEqual(files, ["tools/a.py", "README.md"])
+        mock_run_git.assert_called_once_with(["diff", "--name-only", "base..head"])
 
 
 if __name__ == "__main__":
