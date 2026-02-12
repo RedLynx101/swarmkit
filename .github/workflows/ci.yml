@@ -27,6 +27,11 @@ jobs:
           fi
           python3 tools/receipt_lint.py "${files[@]}"
 
+      - name: Tool unit tests
+        run: |
+          set -euo pipefail
+          PYTHONPATH=tools python3 -m unittest tools/test_*.py
+
       - name: Risk scan
         run: |
           set -euo pipefail
