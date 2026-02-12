@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Repo sanity
         run: |
           set -euo pipefail
@@ -26,3 +28,25 @@ jobs:
             exit 0
           fi
           python3 tools/receipt_lint.py "${files[@]}"
+
+      - name: Tool unit tests
+        run: |
+          set -euo pipefail
+          PYTHONPATH=tools python3 -m unittest tools/test_*.py
+
+      - name: Risk scan
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            if ! git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              echo "No parent commit; skipping risk scan"
+              exit 0
+            fi
+            base="$(git rev-parse HEAD~1)"
+          fi
+          echo "Scanning diff: $base..${GITHUB_SHA}"
+          python3 tools/risk_scan.py --base "$base" --head "${GITHUB_SHA}" --fail-on high \
+            --exclude '^tools/risk_scan\.py$' \
+            --exclude '^tools/test_.*\.py$'
