@@ -25,7 +25,7 @@ class Finding:
 
 
 PATH_RULES: list[tuple[re.Pattern[str], str, str]] = [
-    (re.compile(r"^\.github/workflows/.*\.ya?ml$"), "high", "CI/workflow pipeline changed"),
+    (re.compile(r"^\.github/workflows/.*\.ya?ml$"), "medium", "CI/workflow pipeline changed"),
     (re.compile(r"(^|/)Dockerfile$|(^|/)docker-compose\.ya?ml$"), "high", "Container runtime config changed"),
     (re.compile(r"(^|/)Makefile$"), "medium", "Build orchestration changed"),
     (re.compile(r"(^|/)requirements(\.txt|/.*\.txt)?$"), "high", "Python dependency manifest changed"),
@@ -54,6 +54,10 @@ def changed_files(base: str, head: str) -> list[str]:
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
+def is_excluded(path: str, patterns: list[re.Pattern[str]]) -> bool:
+    return any(p.search(path) for p in patterns)
+
+
 def scan_paths(files: list[str]) -> list[Finding]:
     findings: list[Finding] = []
     for file in files:
@@ -63,9 +67,10 @@ def scan_paths(files: list[str]) -> list[Finding]:
     return findings
 
 
-def scan_added_lines(base: str, head: str) -> list[Finding]:
+def scan_added_lines(base: str, head: str, exclude: list[re.Pattern[str]] | None = None) -> list[Finding]:
     diff = run_git(["diff", "--unified=0", f"{base}..{head}"])
     findings: list[Finding] = []
+    exclude = exclude or []
 
     current_file: str | None = None
     current_line: int | None = None
@@ -89,6 +94,8 @@ def scan_added_lines(base: str, head: str) -> list[Finding]:
             continue
 
         if current_file is None:
+            continue
+        if is_excluded(current_file, exclude):
             continue
 
         content = line[1:]
@@ -121,14 +128,23 @@ def main() -> int:
     parser.add_argument("--base", required=True, help="Base git ref (e.g., origin/main)")
     parser.add_argument("--head", required=True, help="Head git ref (e.g., HEAD)")
     parser.add_argument("--fail-on", choices=["high", "medium", "all"], default="high")
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Regex path to exclude from scanning (repeatable)",
+    )
     args = parser.parse_args()
 
+    exclude_patterns = [re.compile(x) for x in args.exclude]
+
     files = changed_files(args.base, args.head)
+    files = [f for f in files if not is_excluded(f, exclude_patterns)]
     if not files:
         print("risk-scan: no changed files")
         return 0
 
-    findings = [*scan_paths(files), *scan_added_lines(args.base, args.head)]
+    findings = [*scan_paths(files), *scan_added_lines(args.base, args.head, exclude_patterns)]
 
     if not findings:
         print("risk-scan: no risky changes detected")

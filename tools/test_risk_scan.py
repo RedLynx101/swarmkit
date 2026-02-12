@@ -34,6 +34,11 @@ class RiskScanTests(unittest.TestCase):
         self.assertEqual(files, ["tools/a.py", "README.md"])
         mock_run_git.assert_called_once_with(["diff", "--name-only", "base..head"])
 
+    def test_excluded_path_matches_regex(self):
+        patterns = [risk_scan.re.compile(r"^tools/test_.*\.py$")]
+        self.assertTrue(risk_scan.is_excluded("tools/test_risk_scan.py", patterns))
+        self.assertFalse(risk_scan.is_excluded("tools/risk_scan.py", patterns))
+
 
 if __name__ == "__main__":
     unittest.main()

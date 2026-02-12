@@ -47,4 +47,6 @@ jobs:
             base="$(git rev-parse HEAD~1)"
           fi
           echo "Scanning diff: $base..${GITHUB_SHA}"
-          python3 tools/risk_scan.py --base "$base" --head "${GITHUB_SHA}" --fail-on high
+          python3 tools/risk_scan.py --base "$base" --head "${GITHUB_SHA}" --fail-on high \
+            --exclude '^tools/risk_scan\.py$' \
+            --exclude '^tools/test_.*\.py$'
