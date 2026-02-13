@@ -23,3 +23,8 @@ Key docs:
 - Onboarding: `docs/AGENT_ONBOARDING.md`
 - Recommended branch protection: `docs/ops/branch-protection.md`
 - Code owners: `.github/CODEOWNERS`
+- Start Here discussion setup: `docs/community/START_HERE_DISCUSSION.md`
+
+## Community onboarding
+- Join the pinned **Welcome / Start Here** discussion: <https://github.com/RedLynx101/swarmkit/discussions>
+- Use the discussion template at `.github/DISCUSSION_TEMPLATE/start-here.yml`
