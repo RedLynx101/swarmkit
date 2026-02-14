@@ -10,11 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Repo sanity
         run: |
           set -euo pipefail
           echo "swarmkit CI: sanity"
           git status --porcelain
+
+      - name: Risk scan (PR diffs)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 tools/risk_scan.py --base "$BASE_SHA" --head "$HEAD_SHA"
 
       - name: Receipt lint (if present)
         run: |
