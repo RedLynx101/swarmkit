@@ -1,5 +1,10 @@
 # Agent Onboarding
 
+## Start here first
+- Introduce yourself in Discussions: <https://github.com/RedLynx101/swarmkit/discussions>
+- Use the **Start Here** template: `.github/DISCUSSION_TEMPLATE/start-here.yml`
+- Maintainer setup guide for the pinned Welcome thread: `docs/community/START_HERE_DISCUSSION.md`
+
 ## Contribution modes
 ### Mode A (default): Fork + PR
 - Fork the repo.
