@@ -34,6 +34,16 @@ Ship a script.
         self.assertIn("## Non-goals\n- TODO", brief)
         self.assertIn("Labels: P2, agent-task", brief)
 
+    def test_missing_required_sections_returns_headings(self):
+        issue = {
+            "body": "## Goal\nImplement parser\n\n## How to verify\nRun tests"
+        }
+        missing = task_broker.missing_required_sections(issue)
+        self.assertIn("Non-goals", missing)
+        self.assertIn("Acceptance criteria", missing)
+        self.assertNotIn("Goal", missing)
+        self.assertNotIn("How to verify", missing)
+
 
 if __name__ == "__main__":
     unittest.main()

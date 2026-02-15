@@ -90,6 +90,16 @@ def parse_sections(body: str) -> dict[str, str]:
     return out
 
 
+def missing_required_sections(issue: dict[str, object]) -> list[str]:
+    parsed = parse_sections(str(issue.get("body") or ""))
+    missing: list[str] = []
+    for heading in REQUIRED_SECTIONS:
+        key = _normalize_heading(heading)
+        if not parsed.get(key):
+            missing.append(heading)
+    return missing
+
+
 def build_brief(issue: dict[str, object]) -> str:
     issue_number = issue.get("number")
     title = str(issue.get("title") or "")
@@ -124,6 +134,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--issue", type=int, required=True, help="issue number")
     parser.add_argument("--repo", help="owner/repo (defaults to origin remote)")
     parser.add_argument("--output", help="output file path (defaults to stdout)")
+    parser.add_argument(
+        "--fail-on-missing",
+        action="store_true",
+        help="exit with code 2 when required issue sections are missing",
+    )
     return parser
 
 
@@ -140,6 +155,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
+    missing = missing_required_sections(issue)
+
     if args.output:
         path = Path(args.output)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -147,6 +164,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {path}")
     else:
         print(brief, end="")
+
+    if missing:
+        print(f"missing sections: {', '.join(missing)}", file=sys.stderr)
+        if args.fail_on_missing:
+            return 2
 
     return 0
 
