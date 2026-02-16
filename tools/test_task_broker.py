@@ -4,6 +4,28 @@ import task_broker
 
 
 class TestTaskBroker(unittest.TestCase):
+    def test_parse_issue_ref_supports_multiple_formats(self):
+        repo, number = task_broker.parse_issue_ref("8", None)
+        self.assertIsNone(repo)
+        self.assertEqual(number, 8)
+
+        repo, number = task_broker.parse_issue_ref("#9", "acme/swarmkit")
+        self.assertEqual(repo, "acme/swarmkit")
+        self.assertEqual(number, 9)
+
+        repo, number = task_broker.parse_issue_ref(
+            "https://github.com/RedLynx101/swarmkit/issues/10", None
+        )
+        self.assertEqual(repo, "RedLynx101/swarmkit")
+        self.assertEqual(number, 10)
+
+    def test_parse_issue_ref_rejects_invalid_values(self):
+        with self.assertRaises(RuntimeError):
+            task_broker.parse_issue_ref("", None)
+
+        with self.assertRaises(RuntimeError):
+            task_broker.parse_issue_ref("not-an-issue", None)
+
     def test_parse_sections_extracts_markdown_headings(self):
         body = """
 ## Goal

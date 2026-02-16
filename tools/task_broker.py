@@ -29,6 +29,33 @@ REQUIRED_SECTIONS = [
 _HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
 
 
+def parse_issue_ref(issue_ref: str, repo_slug: str | None) -> tuple[str | None, int]:
+    """Parse issue ref as number, #number, or full GitHub issue URL.
+
+    Returns (repo_slug_or_none, issue_number).
+    """
+    raw = issue_ref.strip()
+    if not raw:
+        raise RuntimeError("empty --issue value")
+
+    if raw.isdigit():
+        return repo_slug, int(raw)
+
+    if raw.startswith("#") and raw[1:].isdigit():
+        return repo_slug, int(raw[1:])
+
+    parsed = urlparse(raw)
+    if parsed.scheme in {"http", "https"} and parsed.netloc == "github.com":
+        parts = [p for p in parsed.path.split("/") if p]
+        # /owner/repo/issues/123
+        if len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
+            return f"{parts[0]}/{parts[1]}", int(parts[3])
+
+    raise RuntimeError(
+        "invalid --issue value; use number, #number, or https://github.com/<owner>/<repo>/issues/<n>"
+    )
+
+
 def infer_repo_slug() -> str:
     cmd = ["git", "remote", "get-url", "origin"]
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
@@ -131,7 +158,11 @@ def build_brief(issue: dict[str, object]) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--issue", type=int, required=True, help="issue number")
+    parser.add_argument(
+        "--issue",
+        required=True,
+        help="issue reference: number, #number, or full issue URL",
+    )
     parser.add_argument("--repo", help="owner/repo (defaults to origin remote)")
     parser.add_argument("--output", help="output file path (defaults to stdout)")
     parser.add_argument(
@@ -145,11 +176,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    repo_slug = args.repo
     try:
+        repo_slug, issue_number = parse_issue_ref(args.issue, args.repo)
         if not repo_slug:
             repo_slug = infer_repo_slug()
-        issue = fetch_issue(repo_slug, args.issue)
+        issue = fetch_issue(repo_slug, issue_number)
         brief = build_brief(issue)
     except RuntimeError as exc:
         print(f"error: {exc}", file=sys.stderr)
