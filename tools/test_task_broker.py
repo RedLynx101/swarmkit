@@ -26,6 +26,9 @@ class TestTaskBroker(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             task_broker.parse_issue_ref("not-an-issue", None)
 
+        with self.assertRaises(RuntimeError):
+            task_broker.parse_issue_ref("https://example.com/acme/swarmkit/issues/8", None)
+
     def test_parse_sections_extracts_markdown_headings(self):
         body = """
 ## Goal
