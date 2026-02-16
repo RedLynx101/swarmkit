@@ -55,6 +55,7 @@ Ship a script.
         self.assertIn("## Goal\nGenerate brief from issue", brief)
         self.assertIn("## Non-goals\n- TODO", brief)
         self.assertIn("Labels: P2, agent-task", brief)
+        self.assertIn("Missing required sections in source issue:", brief)
 
     def test_missing_required_sections_returns_headings(self):
         issue = {
