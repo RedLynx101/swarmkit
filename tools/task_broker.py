@@ -49,7 +49,12 @@ def parse_issue_ref(issue_ref: str, repo_slug: str | None) -> tuple[str | None, 
         parts = [p for p in parsed.path.split("/") if p]
         # /owner/repo/issues/123
         if len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
-            return f"{parts[0]}/{parts[1]}", int(parts[3])
+            url_repo = f"{parts[0]}/{parts[1]}"
+            if repo_slug and repo_slug != url_repo:
+                raise RuntimeError(
+                    f"--repo ({repo_slug}) does not match issue URL repo ({url_repo})"
+                )
+            return url_repo, int(parts[3])
 
     raise RuntimeError(
         "invalid --issue value; use number, #number, or https://github.com/<owner>/<repo>/issues/<n>"
