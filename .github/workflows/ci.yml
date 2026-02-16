@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   sanity:
     runs-on: ubuntu-latest
@@ -42,6 +45,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/verify_repo_basics.py
+
+      - name: Security checklist baseline
+        run: |
+          set -euo pipefail
+          python3 tools/security_checklist.py
 
       - name: Tool unit tests
         run: |
