@@ -7,3 +7,4 @@ Available:
 - `risk_scan.py` — flags potentially risky diff paths (workflows, tooling, deps, runtime scripts)
 - `task_broker.py` — converts a GitHub issue into an agent-ready brief template (`--fail-on-missing` for strict mode)
   - accepts `--issue` as: `8`, `#8`, or full URL (`https://github.com/<owner>/<repo>/issues/8`)
+  - validates `--repo` against issue URL repo when both are provided
