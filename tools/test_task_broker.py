@@ -48,6 +48,35 @@ Ship a script.
         self.assertEqual(sections["goal"], "Ship a script.")
         self.assertIn("- Has tests", sections["acceptance criteria"])
 
+    def test_parse_sections_extracts_informal_template_headings(self):
+        body = """
+**Goal**
+Ship a script.
+
+Non-goals:
+- Don't ship a daemon.
+
+**Acceptance criteria:**
+- Has tests
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertEqual(sections["goal"], "Ship a script.")
+        self.assertIn("- Don't ship a daemon.", sections["non-goals"])
+        self.assertIn("- Has tests", sections["acceptance criteria"])
+
+    def test_parse_sections_ignores_non_required_plain_colon_lines(self):
+        body = """
+## Goal
+Implement parser
+
+Note:
+This should stay inside the goal section.
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertIn("Note:", sections["goal"])
+
     def test_build_brief_fills_missing_sections_with_todo(self):
         issue = {
             "number": 8,

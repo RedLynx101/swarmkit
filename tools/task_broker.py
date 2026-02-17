@@ -27,6 +27,8 @@ REQUIRED_SECTIONS = [
 
 
 _HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
+_BOLD_HEADING_RE = re.compile(r"^\*\*(?P<name>[^*]+?)\*\*:?\s*$")
+_PLAIN_HEADING_RE = re.compile(r"^(?P<name>[A-Za-z][A-Za-z\s\-/]+):\s*$")
 
 
 def parse_issue_ref(issue_ref: str, repo_slug: str | None) -> tuple[str | None, int]:
@@ -104,13 +106,24 @@ def parse_sections(body: str) -> dict[str, str]:
     sections: dict[str, list[str]] = {}
     current: str | None = None
 
+    known_headings = {_normalize_heading(name) for name in REQUIRED_SECTIONS}
+
     for line in lines:
-        m = _HEADING_RE.match(line)
-        if m:
-            heading = m.group("name")
+        md_heading = _HEADING_RE.match(line)
+        if md_heading:
+            heading = md_heading.group("name")
             current = _normalize_heading(heading)
             sections.setdefault(current, [])
             continue
+
+        informal_heading = _BOLD_HEADING_RE.match(line) or _PLAIN_HEADING_RE.match(line)
+        if informal_heading:
+            heading = informal_heading.group("name")
+            normalized = _normalize_heading(heading)
+            if normalized in known_headings:
+                current = normalized
+                sections.setdefault(current, [])
+                continue
 
         if current is not None:
             sections[current].append(line)
