@@ -65,6 +65,34 @@ Non-goals:
         self.assertIn("- Don't ship a daemon.", sections["non-goals"])
         self.assertIn("- Has tests", sections["acceptance criteria"])
 
+    def test_parse_sections_supports_inline_informal_heading_content(self):
+        body = """
+**Goal** Ship a script.
+
+Verification: Run unit tests.
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertEqual(sections["goal"], "Ship a script.")
+        self.assertEqual(sections["how to verify"], "Run unit tests.")
+
+    def test_parse_sections_supports_heading_aliases(self):
+        body = """
+## Out of scope
+- Shipping a daemon.
+
+Definition of done:
+- Tests pass.
+
+Files touched:
+- tools/task_broker.py
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertIn("- Shipping a daemon.", sections["non-goals"])
+        self.assertIn("- Tests pass.", sections["acceptance criteria"])
+        self.assertIn("- tools/task_broker.py", sections["files likely touched"])
+
     def test_parse_sections_ignores_non_required_plain_colon_lines(self):
         body = """
 ## Goal

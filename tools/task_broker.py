@@ -27,8 +27,26 @@ REQUIRED_SECTIONS = [
 
 
 _HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
-_BOLD_HEADING_RE = re.compile(r"^\*\*(?P<name>[^*]+?)\*\*:?\s*$")
-_PLAIN_HEADING_RE = re.compile(r"^(?P<name>[A-Za-z][A-Za-z\s\-/]+):\s*$")
+_BOLD_HEADING_RE = re.compile(
+    r"^\*\*(?P<name>[^*]+?)\*\*:?(?:\s+(?P<rest>.+))?\s*$"
+)
+_PLAIN_HEADING_RE = re.compile(
+    r"^(?P<name>[A-Za-z][A-Za-z\s\-/]+):(?:\s+(?P<rest>.+))?\s*$"
+)
+
+_HEADING_ALIASES = {
+    "non goals": "non-goals",
+    "out of scope": "non-goals",
+    "acceptance": "acceptance criteria",
+    "done criteria": "acceptance criteria",
+    "definition of done": "acceptance criteria",
+    "files touched": "files likely touched",
+    "likely files touched": "files likely touched",
+    "constraints": "safety constraints",
+    "safety": "safety constraints",
+    "verification": "how to verify",
+    "test plan": "how to verify",
+}
 
 
 def parse_issue_ref(issue_ref: str, repo_slug: str | None) -> tuple[str | None, int]:
@@ -97,7 +115,8 @@ def fetch_issue(repo_slug: str, issue_number: int) -> dict[str, object]:
 
 
 def _normalize_heading(name: str) -> str:
-    return name.strip().lower().rstrip(":")
+    normalized = name.strip().lower().rstrip(":")
+    return _HEADING_ALIASES.get(normalized, normalized)
 
 
 def parse_sections(body: str) -> dict[str, str]:
@@ -111,18 +130,21 @@ def parse_sections(body: str) -> dict[str, str]:
     for line in lines:
         md_heading = _HEADING_RE.match(line)
         if md_heading:
-            heading = md_heading.group("name")
-            current = _normalize_heading(heading)
-            sections.setdefault(current, [])
-            continue
+            heading = _normalize_heading(md_heading.group("name"))
+            if heading in known_headings:
+                current = heading
+                sections.setdefault(current, [])
+                continue
 
         informal_heading = _BOLD_HEADING_RE.match(line) or _PLAIN_HEADING_RE.match(line)
         if informal_heading:
-            heading = informal_heading.group("name")
-            normalized = _normalize_heading(heading)
-            if normalized in known_headings:
-                current = normalized
+            heading = _normalize_heading(informal_heading.group("name"))
+            if heading in known_headings:
+                current = heading
                 sections.setdefault(current, [])
+                rest = (informal_heading.groupdict().get("rest") or "").strip()
+                if rest:
+                    sections[current].append(rest)
                 continue
 
         if current is not None:
