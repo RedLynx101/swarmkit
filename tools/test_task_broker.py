@@ -76,6 +76,26 @@ Verification: Run unit tests.
         self.assertEqual(sections["goal"], "Ship a script.")
         self.assertEqual(sections["how to verify"], "Run unit tests.")
 
+    def test_parse_sections_supports_inline_without_space_after_separator(self):
+        body = """
+**Goal:**Ship a script.
+How to verify:Run unit tests.
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertEqual(sections["goal"], "Ship a script.")
+        self.assertEqual(sections["how to verify"], "Run unit tests.")
+
+    def test_parse_sections_supports_dash_separated_informal_headings(self):
+        body = """
+Goal - Ship a script.
+Verification — Run unit tests.
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertEqual(sections["goal"], "Ship a script.")
+        self.assertEqual(sections["how to verify"], "Run unit tests.")
+
     def test_parse_sections_supports_heading_aliases(self):
         body = """
 ## Out of scope
