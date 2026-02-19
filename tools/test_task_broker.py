@@ -96,6 +96,16 @@ Verification — Run unit tests.
         self.assertEqual(sections["goal"], "Ship a script.")
         self.assertEqual(sections["how to verify"], "Run unit tests.")
 
+    def test_parse_sections_supports_bulleted_template_headings(self):
+        body = """
+- **Goal:** Ship a script.
+- Verification: Run unit tests.
+""".strip()
+        sections = task_broker.parse_sections(body)
+
+        self.assertEqual(sections["goal"], "Ship a script.")
+        self.assertEqual(sections["how to verify"], "Run unit tests.")
+
     def test_parse_sections_supports_heading_aliases(self):
         body = """
 ## Out of scope

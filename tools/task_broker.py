@@ -28,10 +28,10 @@ REQUIRED_SECTIONS = [
 
 _HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
 _BOLD_HEADING_RE = re.compile(
-    r"^\*\*(?P<name>[^*]+?)\*\*(?::|\s[-—–])?(?:\s*(?P<rest>.+))?\s*$"
+    r"^(?:[-*]\s+)?\*\*(?P<name>[^*]+?)\*\*(?::|\s[-—–])?(?:\s*(?P<rest>.+))?\s*$"
 )
 _PLAIN_HEADING_RE = re.compile(
-    r"^(?P<name>[A-Za-z][A-Za-z\s\-/]+?)(?::|\s[-—–])(?:\s*(?P<rest>.+))?\s*$"
+    r"^(?:[-*]\s+)?(?P<name>[A-Za-z][A-Za-z\s\-/]+?)(?::|\s[-—–])(?:\s*(?P<rest>.+))?\s*$"
 )
 
 _HEADING_ALIASES = {
