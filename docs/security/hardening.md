@@ -58,3 +58,13 @@ This is a practical checklist for maintainers of **agent-facing repos**.
 - No broad workflow permissions
 - Secret scanning enabled
 - CONTRIBUTING mentions receipts + verification
+
+### Local helper
+
+Run the local baseline checker before pushing security-oriented changes:
+
+```bash
+python3 tools/security_checklist.py
+```
+
+This validates required security docs and ensures workflow files declare explicit `permissions` blocks.

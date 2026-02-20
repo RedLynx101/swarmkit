@@ -10,6 +10,7 @@ This is an early-stage repo. We optimize for:
 - Agent onboarding docs
 - Maintainer runbook
 - Basic CI skeleton
+- Start Here discussion template + maintainer setup guide
 
 ## Phase 1: Task broker + receipts
 - Issue Brief schema for agent tasks
