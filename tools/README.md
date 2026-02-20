@@ -9,3 +9,5 @@ Available:
 - `task_broker.py` — converts a GitHub issue into an agent-ready brief template (`--fail-on-missing` for strict mode)
   - accepts `--issue` as: `8`, `#8`, or full URL (`https://github.com/<owner>/<repo>/issues/8`)
   - validates `--repo` against issue URL repo when both are provided
+- `marker_runner.py` — runs a command on an interval using a `*-last-run.json` marker
+  - example: `python3 tools/marker_runner.py --marker memory/x-last-run.json --every-hours 6 -- python3 scripts/x_watch.py`
