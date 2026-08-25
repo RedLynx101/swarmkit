@@ -5,16 +5,30 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   sanity:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Repo sanity
         run: |
           set -euo pipefail
           echo "swarmkit CI: sanity"
           git status --porcelain
+
+      - name: Risk scan (PR diffs)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 tools/risk_scan.py --base "$BASE_SHA" --head "$HEAD_SHA"
 
       - name: Receipt lint (if present)
         run: |
@@ -26,3 +40,24 @@ jobs:
             exit 0
           fi
           python3 tools/receipt_lint.py "${files[@]}"
+
+      - name: Repo baseline check
+        run: |
+          set -euo pipefail
+          python3 tools/verify_repo_basics.py
+
+      - name: Security checklist baseline
+        run: |
+          set -euo pipefail
+          python3 tools/security_checklist.py
+
+      - name: Tool unit tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tools/test_*.py)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "No tool tests found; skipping"
+            exit 0
+          fi
+          PYTHONPATH=tools python3 -m unittest "${tests[@]}"

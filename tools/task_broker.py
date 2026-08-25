@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+"""Create an agent-ready brief from a GitHub issue.
+
+Examples:
+  python3 tools/task_broker.py --issue 8
+  python3 tools/task_broker.py --issue 8 --output docs/briefs/issue-8.md
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+REQUIRED_SECTIONS = [
+    "Goal",
+    "Non-goals",
+    "Acceptance criteria",
+    "Files likely touched",
+    "Safety constraints",
+    "How to verify",
+]
+
+
+_HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
+_BOLD_HEADING_RE = re.compile(
+    r"^(?:[-*]\s+)?\*\*(?P<name>[^*]+?)\*\*(?::|\s[-—–])?(?:\s*(?P<rest>.+))?\s*$"
+)
+_PLAIN_HEADING_RE = re.compile(
+    r"^(?:[-*]\s+)?(?P<name>[A-Za-z][A-Za-z\s\-/]+?)(?::|\s[-—–])(?:\s*(?P<rest>.+))?\s*$"
+)
+
+_HEADING_ALIASES = {
+    "non goals": "non-goals",
+    "out of scope": "non-goals",
+    "acceptance": "acceptance criteria",
+    "done criteria": "acceptance criteria",
+    "definition of done": "acceptance criteria",
+    "files touched": "files likely touched",
+    "likely files touched": "files likely touched",
+    "constraints": "safety constraints",
+    "safety": "safety constraints",
+    "verification": "how to verify",
+    "test plan": "how to verify",
+}
+
+
+def parse_issue_ref(issue_ref: str, repo_slug: str | None) -> tuple[str | None, int]:
+    """Parse issue ref as number, #number, or full GitHub issue URL.
+
+    Returns (repo_slug_or_none, issue_number).
+    """
+    raw = issue_ref.strip()
+    if not raw:
+        raise RuntimeError("empty --issue value")
+
+    if raw.isdigit():
+        return repo_slug, int(raw)
+
+    if raw.startswith("#") and raw[1:].isdigit():
+        return repo_slug, int(raw[1:])
+
+    parsed = urlparse(raw)
+    if parsed.scheme in {"http", "https"} and parsed.netloc == "github.com":
+        parts = [p for p in parsed.path.split("/") if p]
+        # /owner/repo/issues/123
+        if len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
+            url_repo = f"{parts[0]}/{parts[1]}"
+            if repo_slug and repo_slug != url_repo:
+                raise RuntimeError(
+                    f"--repo ({repo_slug}) does not match issue URL repo ({url_repo})"
+                )
+            return url_repo, int(parts[3])
+
+    raise RuntimeError(
+        "invalid --issue value; use number, #number, or https://github.com/<owner>/<repo>/issues/<n>"
+    )
+
+
+def infer_repo_slug() -> str:
+    cmd = ["git", "remote", "get-url", "origin"]
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or "git remote get-url failed")
+    remote = proc.stdout.strip()
+
+    if remote.startswith("git@github.com:"):
+        slug = remote.split(":", 1)[1]
+    else:
+        parsed = urlparse(remote)
+        slug = parsed.path.lstrip("/")
+
+    if slug.endswith(".git"):
+        slug = slug[:-4]
+
+    if not slug or "/" not in slug:
+        raise RuntimeError(f"unable to infer owner/repo from remote: {remote}")
+    return slug
+
+
+def fetch_issue(repo_slug: str, issue_number: int) -> dict[str, object]:
+    endpoint = f"repos/{repo_slug}/issues/{issue_number}"
+    cmd = ["gh", "api", endpoint]
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or "gh api failed")
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"invalid gh api JSON: {exc}") from exc
+
+
+def _normalize_heading(name: str) -> str:
+    normalized = name.strip().lower().rstrip(":")
+    return _HEADING_ALIASES.get(normalized, normalized)
+
+
+def parse_sections(body: str) -> dict[str, str]:
+    body = body or ""
+    lines = body.splitlines()
+    sections: dict[str, list[str]] = {}
+    current: str | None = None
+
+    known_headings = {_normalize_heading(name) for name in REQUIRED_SECTIONS}
+
+    for line in lines:
+        md_heading = _HEADING_RE.match(line)
+        if md_heading:
+            heading = _normalize_heading(md_heading.group("name"))
+            if heading in known_headings:
+                current = heading
+                sections.setdefault(current, [])
+                continue
+
+        informal_heading = _BOLD_HEADING_RE.match(line) or _PLAIN_HEADING_RE.match(line)
+        if informal_heading:
+            heading = _normalize_heading(informal_heading.group("name"))
+            if heading in known_headings:
+                current = heading
+                sections.setdefault(current, [])
+                rest = (informal_heading.groupdict().get("rest") or "").strip()
+                if rest:
+                    sections[current].append(rest)
+                continue
+
+        if current is not None:
+            sections[current].append(line)
+
+    out: dict[str, str] = {}
+    for heading, content_lines in sections.items():
+        text = "\n".join(content_lines).strip()
+        out[heading] = text
+    return out
+
+
+def missing_required_sections(issue: dict[str, object]) -> list[str]:
+    parsed = parse_sections(str(issue.get("body") or ""))
+    missing: list[str] = []
+    for heading in REQUIRED_SECTIONS:
+        key = _normalize_heading(heading)
+        if not parsed.get(key):
+            missing.append(heading)
+    return missing
+
+
+def build_brief(issue: dict[str, object]) -> str:
+    issue_number = issue.get("number")
+    title = str(issue.get("title") or "")
+    url = str(issue.get("html_url") or "")
+    labels = [x.get("name", "") for x in issue.get("labels", []) if isinstance(x, dict)]
+    body = str(issue.get("body") or "")
+
+    parsed = parse_sections(body)
+    missing = missing_required_sections(issue)
+
+    out: list[str] = []
+    out.append(f"# Agent Brief: Issue #{issue_number} — {title}")
+    out.append("")
+    out.append(f"Source issue: {url}")
+    out.append(f"Labels: {', '.join([l for l in labels if l]) or 'none'}")
+    out.append("")
+
+    for heading in REQUIRED_SECTIONS:
+        key = _normalize_heading(heading)
+        value = parsed.get(key, "")
+        out.append(f"## {heading}")
+        out.append(value if value else "- TODO")
+        out.append("")
+
+    out.append("## Notes")
+    out.append("- Generated by tools/task_broker.py")
+    if missing:
+        out.append(f"- Missing required sections in source issue: {', '.join(missing)}")
+    out.append("")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--issue",
+        required=True,
+        help="issue reference: number, #number, or full issue URL",
+    )
+    parser.add_argument("--repo", help="owner/repo (defaults to origin remote)")
+    parser.add_argument("--output", help="output file path (defaults to stdout)")
+    parser.add_argument(
+        "--fail-on-missing",
+        action="store_true",
+        help="exit with code 2 when required issue sections are missing",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    try:
+        repo_slug, issue_number = parse_issue_ref(args.issue, args.repo)
+        if not repo_slug:
+            repo_slug = infer_repo_slug()
+        issue = fetch_issue(repo_slug, issue_number)
+        brief = build_brief(issue)
+    except RuntimeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    missing = missing_required_sections(issue)
+
+    if args.output:
+        path = Path(args.output)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(brief, encoding="utf-8")
+        print(f"wrote {path}")
+    else:
+        print(brief, end="")
+
+    if missing:
+        print(f"missing sections: {', '.join(missing)}", file=sys.stderr)
+        if args.fail_on_missing:
+            return 2
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
