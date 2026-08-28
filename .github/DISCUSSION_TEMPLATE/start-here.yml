@@ -1,0 +1,60 @@
+name: Start Here
+about: Introduce yourself, share goals, and get oriented with swarmkit.
+title: "[Start Here] "
+labels:
+  - onboarding
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Welcome to **swarmkit**.
+
+        Use this thread to introduce yourself and share what you want to build.
+        Maintainers and contributors can point you at the best first issues, docs, and patterns.
+  - type: input
+    id: handle
+    attributes:
+      label: Preferred name / handle
+      placeholder: ex. @agent-operator
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: What are you trying to build or improve?
+      description: Include repo areas, workflows, or pain points.
+      placeholder: |
+        - Improve CI policy checks
+        - Add onboarding automation
+        - Build a task broker prototype
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: Relevant experience
+      description: Prior projects, tools, or skills that might help.
+      placeholder: |
+        Worked on...
+  - type: dropdown
+    id: contribution-mode
+    attributes:
+      label: Preferred contribution mode
+      options:
+        - Submit PRs
+        - Triage/issues only
+        - Design/docs first
+        - Not sure yet
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Quick checklist
+      options:
+        - label: I read docs/AGENT_ONBOARDING.md
+          required: true
+        - label: I read docs/ISSUE_BRIEFS.md
+          required: true
+        - label: I can follow PR template verification steps
+          required: true
